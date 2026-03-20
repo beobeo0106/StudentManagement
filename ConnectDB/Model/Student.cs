@@ -12,4 +12,8 @@ public class Student
     [StringLength(100)]
     public string FullName { get; set; } = string.Empty;
     public DateTime Birthday { get; set; }
+    public int ClassId { get; set; } // Cột này sẽ là Foreign Key trong DB
+
+    // Navigation property (để lấy thông tin lớp khi truy vấn sinh viên)
+    public Class? Class { get; set; }
 }

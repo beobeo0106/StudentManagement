@@ -9,4 +9,5 @@ base(options)
     {
     }
     public DbSet<Student> Students { get; set; }
+    public DbSet<Class> Classes { get; set; }
 }
