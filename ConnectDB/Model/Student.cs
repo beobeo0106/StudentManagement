@@ -16,4 +16,5 @@ public class Student
 
     // Navigation property (để lấy thông tin lớp khi truy vấn sinh viên)
     public Class? Class { get; set; }
+    //2703
 }
