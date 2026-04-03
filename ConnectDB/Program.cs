@@ -1,21 +1,80 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ConnectDB.Data; // Đảm bảo namespace này khớp với file AppDbContext.cs của bạn
+using EcommerceAPI.Data;
+// THƯ VIỆN BẮT BUỘC CHO JWT
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+// THƯ VIỆN BẮT BUỘC ĐỂ TẠO Ổ KHÓA TRÊN SWAGGER
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. ĐĂNG KÝ SERVICES VÀO CONTAINER
+// 1. ĐĂNG KÝ SERVICES CƠ BẢN
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// --- CHÈN ĐOẠN NÀY ĐỂ KẾT NỐI DATABASE ---
+// ==========================================
+// ĐÃ SỬA: CẤU HÌNH SWAGGER ĐỂ CÓ NÚT NHẬP TOKEN
+// ==========================================
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Nhập token JWT theo chuẩn: Bearer {token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            new string[] {}
+        }
+    });
+});
+
+// CẤU HÌNH KẾT NỐI DATABASE (SQL Server)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-// -----------------------------------------
+    options.UseSqlServer(connectionString));
+
+
+// ==========================================
+// CẤU HÌNH BẢO MẬT JWT 
+// ==========================================
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
+// ==========================================
+
 
 var app = builder.Build();
 
-// 2. CẤU HÌNH HTTP REQUEST PIPELINE (MIDDLEWARE)
+// 2. HTTP REQUEST PIPELINE (MIDDLEWARE)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -23,10 +82,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Cho phép trình duyệt đọc các file ảnh tĩnh từ thư mục wwwroot
 
-// Lưu ý: Nếu bạn có dùng Authentication/Authorization thì để ở đây
+// ==========================================
+// KIỂM TRA ĐĂNG NHẬP (Bắt buộc phải nằm trên UseAuthorization)
+// ==========================================
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();
