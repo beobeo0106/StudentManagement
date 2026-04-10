@@ -75,18 +75,15 @@ builder.Services.AddAuthentication(options =>
 var app = builder.Build();
 
 // 2. HTTP REQUEST PIPELINE (MIDDLEWARE)
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+// ĐÃ SỬA: Xóa bỏ lệnh if để Swagger hiện ra trên Somee
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // Cho phép trình duyệt đọc các file ảnh tĩnh từ thư mục wwwroot
+app.UseStaticFiles();
 
-// ==========================================
-// KIỂM TRA ĐĂNG NHẬP (Bắt buộc phải nằm trên UseAuthorization)
-// ==========================================
+// KIỂM TRA ĐĂNG NHẬP
 app.UseAuthentication();
 app.UseAuthorization();
 
