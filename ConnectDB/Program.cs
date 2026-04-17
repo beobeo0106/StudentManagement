@@ -12,6 +12,18 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. ĐĂNG KÝ SERVICES CƠ BẢN
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+// ==========================================
+// THÊM MỚI: CẤU HÌNH CORS (CHO PHÉP FRONTEND TRUY CẬP)
+// ==========================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()   // Cho phép tất cả các nguồn (Localhost, Vercel...)
+              .AllowAnyMethod()   // Cho phép GET, POST, PUT, DELETE
+              .AllowAnyHeader();  // Cho phép tất cả các Header (bao gồm Token)
+    });
+});
 
 // ==========================================
 // ĐÃ SỬA: CẤU HÌNH SWAGGER ĐỂ CÓ NÚT NHẬP TOKEN
@@ -79,6 +91,7 @@ var app = builder.Build();
 // ĐÃ SỬA: Xóa bỏ lệnh if để Swagger hiện ra trên Somee
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
